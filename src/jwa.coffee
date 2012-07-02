@@ -2,7 +2,7 @@ crypto      = require "crypto"
 querystring = require "querystring"
 
 #
-# Based on [JSON Web Algorithms (JWA) v02](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt)
+# The following is based on [JSON Web Algorithms (JWA) v02](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt):
 #
 # The JSON Web Algorithms (JWA) specification enumerates cryptographic
 # algorithms and identifiers to be used with the JSON Web Signature
@@ -14,8 +14,6 @@ querystring = require "querystring"
 # over time.  This specification also describes the semantics and
 # operations that are specific to these algorithms and algorithm
 # families.
-#
-#
 #
 #   +--------------------+----------------------------------------------+
 #   | alg Parameter      | Digital Signature or MAC Algorithm           |
@@ -42,24 +40,93 @@ querystring = require "querystring"
 #  algorithms.  Support for other algorithms and key sizes is OPTIONAL.
 #
 
-class HMACAlgorithm
-
+jwaToOpenSSL = (alg) ->
   _algOssl =
+    # HMAC
     HS256 : "SHA256"
     HS384 : "SHA384"
     HS512 : "SHA512"
+    # RSA
+    RS256 : "RSA-SHA256"
+    RS384 : "RSA-SHA384"
+    RS512 : "RSA-SHA512"
+
+  _algOssl[alg]
+
+ 
+# Provides the HMAC implementation of the **HS256**, **HS384** and **HS512** algorithms.
+# Cryptographic algorithms are provided by **Node's** [Crypto library](http://nodejs.org/api/crypto.html)
+#
+# As mentioned in the specification the HMAC (Hash-based Message Authentication Codes) enable the usage
+# of a *known secret*, this can be used to demonstrate that the MAC matches the hashed content, 
+# in this case the JWS Secured Input, which therefore demonstrates that whoever generated the MAC was in
+# possession of the secret. 
+#
+# To review the specifics of the algorithms please review chapter
+# "3.2.  MAC with HMAC SHA-256, HMAC SHA-384, or HMAC SHA-512" of
+# the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
+#
+#  The HMAC SHA-256 MAC is generated as follows:
+#
+#  1.  Apply the HMAC SHA-256 algorithm to the bytes of the UTF-8
+#   representation of the JWS Secured Input (which is the same as the
+#   ASCII representation) using the shared key to produce an HMAC
+#   value.
+#
+#  2.  Base64url encode the resulting HMAC value.
+#
+#  The output is the Encoded JWS Signature for that JWS.
+#
+#  The HMAC SHA-256 MAC for a JWS is validated as follows:
+#
+#  1.  Apply the HMAC SHA-256 algorithm to the bytes of the UTF-8
+#   representation of the JWS Secured Input (which is the same as the
+#   ASCII representation) of the JWS using the shared key.
+#
+#  2.  Base64url encode the resulting HMAC value.
+#
+#  3.  If the Encoded JWS Signature and the base64url encoded HMAC value
+#   exactly match, then one has confirmation that the shared key was
+#   used to generate the HMAC on the JWS and that the contents of the
+#   JWS have not be tampered with.
+#
+#  4.  If the validation fails, the JWS MUST be rejected.
+#
+#  Alternatively, the Encoded JWS Signature MAY be base64url decoded to
+#  produce the JWS Signature and this value can be compared with the
+#  computed HMAC value, as this comparison produces the same result as
+#  comparing the encoded values.
+#
+#  Securing content with the HMAC SHA-384 and HMAC SHA-512 algorithms is
+#  performed identically to the procedure for HMAC SHA-256 - just with
+#  correspondingly larger minimum key sizes and result values.
+#
+class HMACAlgorithm
+
+  _algs = [ "HS256", "HS384", "HS512" ]
 
     #
-    # Creates and returns a hmac object, a cryptographic hmac with the given algorithm and key.
-    # algorithm is dependent on the available algorithms supported by OpenSSL - see createHash above. key is the hmac key to be used.
+    # Creates and returns an HMAC object, a cryptographic HMAC binded to the given algorithm and key.
+    # The supported algorithm is dependent on the available algorithms in *OpenSSL* - to get the list
+    # type `openssl list-message-digest-algorithms` in the terminal. If you provide an algorithm that is
+    # not supported and error will be thrown.
     #
-  constructor: (@alg = "HS256" , @key) ->
-    osslAlg = _algOssl[@alg]
-    new Error "Algorithm #{alg} is not supported by the specification." unless osslAlg
+    # The following table maps the algorithm from the *JWA Spec* to the one provided by *OpenSSL*
+    #
+    #
+  constructor: (alg = "HS256" , @key) ->
+    throw Error "A defined algorithm is required." unless alg
+
+    @alg = alg.toUpperCase()
+    throw Error "Algorithm #{@alg} is not supported by HMAC." unless _algs.indexOf(@alg) >= 0
+
+    @osslAlg = jwaToOpenSSL @alg
+    new Error "Algorithm #{@alg} is not supported by the specification." unless @osslAlg
+
     try
-      @hmac = crypto.createHmac osslAlg, @key
+      @hmac = crypto.createHmac @osslAlg, @key
     catch error
-      throw new Error "HMAC does not support algorithm #{@alg} => #{osslAlg}!"
+      throw new Error "HMAC does not support algorithm #{@alg} => #{@osslAlg}!"
 
   update: (data) ->
     throw new Error "There is no reference to the hmac object!" unless @hmac
@@ -72,41 +139,88 @@ class HMACAlgorithm
 
   sign: (encoding) -> @digest(encoding)
 
- 
-module.exports.HMACAlgorithm =  HMACAlgorithm
+module.exports.HMACFactory =  (alg, key) ->  new HMACAlgorithm(alg, key)
 
-class SigningAlgorithm
 
-  _createSigner = (alg) ->
+  #  
+  #  Digital Signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512
+  #
+  #  To review the specifics of the algorithms please review chapter
+  #  "3.3.  Digital Signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512" of
+  #  the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
+  #  
+  #  Important elements to understand are.
+  #  * RSASSA-PKCS1-v1_5 digital signature algorithm (commonly known as PKCS#1), 
+  #  using SHA-256, SHA-384, or SHA-512 as the hash function. 
+  #  
+  #  The *"alg"* (algorithm) header parameter values used in the JWS Header to indicate that 
+  #  the *Encoded JWS Signature* contains a **base64url** encoded **RSA digital signature* using the
+  #  respective hash function are:
+  #  * "RS256"
+  #  * "RS384"
+  #  * "RS512" 
+  #
+  #  **A key of size 2048 bits or larger MUST be used with these algorithms.**
+  #
+  #  The RSA SHA-256 digital signature is generated as follows:
+  #
+  #  1.  Generate a digital signature of the bytes of the UTF-8
+  #     representation of the JWS Secured Input (which is the same as the
+  #     ASCII representation) using RSASSA-PKCS1-V1_5-SIGN and the SHA-256 
+  #     hash function with the desired private key.  The output will
+  #     be a byte array.
+  #
+  #  2.  Base64url encode the resulting byte array.
+  #
+  #  The output is the Encoded JWS Signature for that JWS.
+  #
+  #  The RSA SHA-256 digital signature for a JWS is validated as follows:
+  #
+  #  1.  Take the Encoded JWS Signature and base64url decode it into a
+  #     byte array.  If decoding fails, the JWS MUST be rejected.
+  #
+  #  2.  Submit the bytes of the UTF-8 representation of the JWS Secured
+  #     Input (which is the same as the ASCII representation) and the
+  #     public key corresponding to the private key used by the signer to
+  #     the RSASSA-PKCS1-V1_5-VERIFY algorithm using SHA-256 as the hash
+  #     function.
+  #
+  #  3.  If the validation fails, the JWS MUST be rejected.
+  #
+  #  Signing with the RSA SHA-384 and RSA SHA-512 algorithms is performed
+  #  identically to the procedure for RSA SHA-256 - just with
+  #  correspondingly larger result values.
+  # 
+  #
+class RSAlgorithm
+  _algs = [ "RS256", "RS384", "RS512" ]
+
+  _assertSigner : () ->
+    throw Error "Signer is not defined!" unless @signer
+
+  constructor: (alg = "RSA-SHA256", @key_PEM) ->
+    throw Error "A defined algorithm is required." unless alg
+
+    @alg = alg.toUpperCase()
+    throw Error "Algorithm #{@alg} is not supported by RSA." unless _algs.indexOf(@alg) >= 0
+
+    @osslAlg = jwaToOpenSSL @alg
+    new Error "Algorithm #{@alg} is not supported by the specification." unless @osslAlg
+
     try
-      @signer = crypto.createSign(alg)
+      @signer = crypto.createSign(@osslAlg)
     catch error
-      throw new Error "Unable to create a signer with algorithm #{alg}!"
-
-  _createVerifier = (alg) ->
-    try
-      verifier = crypto.createVerifier(alg)
-      return verifier
-    catch error
-      throw new Error "Unable to create a verifier with algorithm #{alg}!"
-
-  _assertSigner = () ->
-    throw new Error "The `signer` reference is undefined!" unless @signer
-
-  constructor: (@alg = "RSA-SHA256", @key_PEM) ->
-    _createSigner(@alg)
+      throw new Error "Unable to create a signer with algorithm #{@osslAlg}!"
   
   update: (data) ->
-    _assertSigner()
+    @_assertSigner()
     @signer.update data
 
   sign: (format = "base64") ->
-    _assertSigner()
-    @signer.sign(@key_PEM, format)
-  
-  verify: (publicKey, data, format) ->
-    verifier = _createVerifier(@alg)
-    @keyPEM.verifyString(@data, b64urltohex(sig))
+    @_assertSigner()
+    querystring.escape @signer.sign(@key_PEM, format)
+
+module.exports.RSFactory = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
  
 class VerifierAlgorithm
   
