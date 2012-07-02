@@ -1,0 +1,18 @@
+{
+  "name": "jot",
+  "version": "0.0.1",
+  "description": "Node implementation of JSON Web Token (JWT) with support for signatures (JWS), encryption (JWE) and web keys (JWK). ",
+  "keywords": [ "jwt", "jws", "jwe", "jwk" ],
+  "author": "Bernardo <bernardo.gomezpalacio@gmail.com>",
+  "dependencies": {
+    "node-base64": "0.0.1"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*"
+  },
+  "engines" : {
+    "node" : "0.8.*"
+  },
+  "main": "index"
+}
