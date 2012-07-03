@@ -11,13 +11,14 @@ red = '\x33[0;31m'
 log = (message, color, explanation) ->
   console.log color + message + reset + ' ' + (explanation or '')
 
+print = (data) -> console.log data.toString().trim()
+
 handleError = (err) ->
   if err
     #console.log "\n\x33[1;36m=>\x33[1;37m Remember that you need: coffee-script@0.9.4 and mocha@0.5.2\x33[0;37m\n"
     log "Remember that you need: coffee-script@0.9.4 and mocha@0.5.2", red
     console.log err.stack
 
-print = (data) -> console.log data.toString().trim()
 
 task 'install', 'Executes an install of the required packages.', ->
   exec 'npm install'
@@ -32,8 +33,8 @@ task 'clean', 'Remove generated Javascripts', ->
 task 'test', 'Test the app', (options) ->
   console.log "\n\x1B[00;33m=>\x1B[00;32m Running tests..\x1B[00;33m\n"
   mocha = spawn 'mocha', '-c -b --compilers coffee:coffee-script'.split(' ')
-  mocha.stdout.on 'data', print
-  mocha.stderr.on 'data', print
+  mocha.stdout.on 'data', (data) -> print data.toString()
+  mocha.stderr.on 'data', (data) -> log data.toString(), red
 
 task 'docs', 'Generate annotated source code with Docco', ->
   fs.readdir 'src', (err, contents) ->
