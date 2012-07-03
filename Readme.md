@@ -22,6 +22,7 @@ Pleae review the `pacagke.json` for the full set of dependencies.
 
 (The MIT License)
 
+Copyright (c) 2011 Kazuhito Hokamura <k.hokamura@gmail.com>
 Copyright (c) 2012 Bernardo &lt;bernardo.gomezpalacio@gmail.com&gt;
 
 Permission is hereby granted, free of charge, to any person obtaining
