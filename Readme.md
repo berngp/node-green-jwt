@@ -1,3 +1,4 @@
+[![Build Status](https://secure.travis-ci.org/berngp/node-jot.png?branch=master)](http://travis-ci.org/berngp/node-jot)
 
 # Jot
 
