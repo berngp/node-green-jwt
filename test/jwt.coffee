@@ -34,29 +34,26 @@ jwt = require "../lib/jwt"
 describe 'JWT Implementation ', ->
 
   fixtures =
-    jwt_header :
-      type : "JWT"
-      alg  : "HS256"
-
     hmac_key : "key"
+
+    jwt_header :
+      typ  : "JWT"
+      alg  : "HS256"
 
     jwt_claim :
       iss  : "joe"
       exp  : 1300819380
       "http://example.com/is_root" : true
 
-    encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.h7SvUGw_y4DJBMZiAiF49BAkkWhovB7B5HmztFAq6s0" 
+    encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.h7SvUGw_y4DJBMZiAiF49BAkkWhovB7B5HmztFAq6s0"
 
   it "should decode ...", ->
     jwt_request = jwt.jwt_decode fixtures.encoded_jwt
+    jwt_request.header.should.be.eql fixtures.jwt_header
     jwt_request.claim.should.be.eql fixtures.jwt_claim
 
   it "should encode ...", ->
     token = jwt.jwt_encode fixtures.jwt_claim, fixtures.hmac_key
     token.should.be.eql fixtures.encoded_jwt
     
-
-
-     
-
 
