@@ -25,6 +25,9 @@ gen_test_keys:
 		test/mytest-rsakey.pem -out test/mytest-rsacert.pem
 	openssl pkcs12 -passout pass:notasecret -export -in test/mytest-rsacert.pem -inkey test/mytest-rsakey.pem -out test/test-myrsacert.pi12 -name "Testing PKCS12 Certificate"
 
-all: install build test
+docs:
+	cake docs
+
+all: install build test docs
 
 .PHONY: all 

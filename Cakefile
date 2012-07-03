@@ -1,8 +1,20 @@
-{exec, spawn} = require 'child_process'
+fs            = require 'fs'
+{print}       = require 'util'
+{spawn, exec} = require 'child_process'
+
+# ANSI Terminal Colors
+bold = '\x33[0;1m'
+green = '\x33[0;32m'
+reset = '\x33[0m'
+red = '\x33[0;31m'
+
+log = (message, color, explanation) ->
+  console.log color + message + reset + ' ' + (explanation or '')
 
 handleError = (err) ->
   if err
-    console.log "\n\x33[1;36m=>\x33[1;37m Remember that you need: coffee-script@0.9.4 and mocha@0.5.2\x33[0;37m\n"
+    #console.log "\n\x33[1;36m=>\x33[1;37m Remember that you need: coffee-script@0.9.4 and mocha@0.5.2\x33[0;37m\n"
+    log "Remember that you need: coffee-script@0.9.4 and mocha@0.5.2", red
     console.log err.stack
 
 print = (data) -> console.log data.toString().trim()
@@ -23,6 +35,13 @@ task 'test', 'Test the app', (options) ->
   mocha.stdout.on 'data', print
   mocha.stderr.on 'data', print
 
+task 'docs', 'Generate annotated source code with Docco', ->
+  fs.readdir 'src', (err, contents) ->
+    files = ("src/#{file}" for file in contents when /\.coffee$/.test file)
+    docco = spawn 'docco', files
+    docco.stdout.on 'data', (data) -> print data.toString()
+    docco.stderr.on 'data', (data) -> log data.toString(), red
+    docco.on 'exit', (status) -> callback?() if status is 0
 
 task 'dev', 'Continuous compilation', ->
   coffee = spawn 'coffee', '-wc --bare -o lib src'.split(' ')
