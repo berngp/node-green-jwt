@@ -1,5 +1,28 @@
-# Node
-fs  = require "fs"
+###
+# (The MIT License)
+#
+# Copyright (c) 2012 Bernardo &lt;bernardo.gomezpalacio@gmail.com&gt;
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# 'Software'), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+###
+
 # Tests
 should = require "should"
 # Self
@@ -57,9 +80,9 @@ describe 'JWA Implementation for MAC', ->
 
   # Precalculated expectations, note that they are base64 - URL Encoded
   expectations =
-    HS256 : "6SN4r6MZmNNKkok0iK0E8bu9H7zoRHYZXXhPLr5M6eU%3D"
-    HS384 : "Mqzvb4sukLBQ9MTVroERBO%2FPMUwwe03hi4BVQoEPo0lc3z32vd8mX0YSfsM%2FhX96"
-    HS512 : "qG1p5FRVIbAG02OSFc%2F3JlRflbLeVyBe5jJmejM8%2F%2BJHVD56ia2A5JOFJ3p%2F0uulG7fQQ4M%2FswGvqMlukUOhNw%3D%3D"
+    HS256 : "6SN4r6MZmNNKkok0iK0E8bu9H7zoRHYZXXhPLr5M6eU="
+    HS384 : "Mqzvb4sukLBQ9MTVroERBO/PMUwwe03hi4BVQoEPo0lc3z32vd8mX0YSfsM/hX96"
+    HS512 : "qG1p5FRVIbAG02OSFc/3JlRflbLeVyBe5jJmejM8/+JHVD56ia2A5JOFJ3p/0uulG7fQQ4M/swGvqMlukUOhNw=="
 
   # We generate permutations per known algorithm to assert the creation of the HMAC instance
   # and digestion of the data.
@@ -80,7 +103,7 @@ describe 'JWA Implementation for MAC', ->
 
 
   it "should throw an error if an invalid algorithm is provided", ->
-    ( () -> jwa.HMACFactory "HS124", hmacKey ).should.throw()
+    should.not.exist( jwa.provider("HS124") )
 
 
 
@@ -119,11 +142,11 @@ hrnnw07pfG7XHI8piSgq7nruQ+OQVClbtng5SWkX63FIXItSoHOFTG/3YWf7wp9c
 """
   # Precalcualted Expectations (note that they are already base64 - URL Encoded)
   expectations =
-    RS256: "NrkVPyb9Uux7bZNKrj4k5lK1tgYU8qom8q7m0tGfFAxRxESeEi6E60Aq1zO8fFwJDANLh8Ny1qO29xbv3jkFUoGB5OOYbFmCOW%2FJZMPX%2BDBZzp6DpCvM8vFuo5PSbgZrh4oYhS7PAObU9prekIRCWeVl52tecc3bJFTunP7l35Ot%2BBMSkiG2tZ2sMMGxa08TsF1DML%2FPAbYeO0u%2BGZ2M4bZe5PA1upnpPCHdV%2FWjaX3uUtcr4cQ2IeeLi5Ajo1MDr%2Boc1Qub%2FOaBERXwsYD2mhllBtIXsiJyNX8D3lWsaK4TeNWLQ62hvJcsXIkGaVaXoPgJOjrKumcQ5YtyUynDhQ%3D%3D"
+    RS256: "NrkVPyb9Uux7bZNKrj4k5lK1tgYU8qom8q7m0tGfFAxRxESeEi6E60Aq1zO8fFwJDANLh8Ny1qO29xbv3jkFUoGB5OOYbFmCOW/JZMPX+DBZzp6DpCvM8vFuo5PSbgZrh4oYhS7PAObU9prekIRCWeVl52tecc3bJFTunP7l35Ot+BMSkiG2tZ2sMMGxa08TsF1DML/PAbYeO0u+GZ2M4bZe5PA1upnpPCHdV/WjaX3uUtcr4cQ2IeeLi5Ajo1MDr+oc1Qub/OaBERXwsYD2mhllBtIXsiJyNX8D3lWsaK4TeNWLQ62hvJcsXIkGaVaXoPgJOjrKumcQ5YtyUynDhQ=="
 
-    RS384: "TfO2Y7smnasGGhy4Y0gMQ7aZb739KmaQzbYOFK%2BVZ7QssxRSzeJvCL4YfoJybPwsYb6UyqHtBmhIc6KnwBhFmH5HIm%2FstvvXjCdykkHG4%2FlsA%2FjO%2FmAEFABhXZFr1Iu4MPJvXfs3%2BxIOsnVFkbUtv7%2FB8Lbt9yglYFgRUCNacgRDUm8UvY9zi1iM%2BwEmxKYAJiYhlqsxaa0zk36x67B5QPf6jvcd%2FdiPLuw7JRuprR%2Fd11QBLZSW%2B4cXi6KIF%2FH07O%2Bg6pvMOLtiIpESOdNzcGcxk5uCZIsONbE%2BJVde20mhILshjYnqS7Npz0Vy%2BrwmiLF%2FPaHyR%2FVcP4Cl8A5utQ%3D%3D"
+    RS384: "TfO2Y7smnasGGhy4Y0gMQ7aZb739KmaQzbYOFK+VZ7QssxRSzeJvCL4YfoJybPwsYb6UyqHtBmhIc6KnwBhFmH5HIm/stvvXjCdykkHG4/lsA/jO/mAEFABhXZFr1Iu4MPJvXfs3+xIOsnVFkbUtv7/B8Lbt9yglYFgRUCNacgRDUm8UvY9zi1iM+wEmxKYAJiYhlqsxaa0zk36x67B5QPf6jvcd/diPLuw7JRuprR/d11QBLZSW+4cXi6KIF/H07O+g6pvMOLtiIpESOdNzcGcxk5uCZIsONbE+JVde20mhILshjYnqS7Npz0Vy+rwmiLF/PaHyR/VcP4Cl8A5utQ=="
 
-    RS512: "SgSO79ZDzvzFbiVM%2BXIMSf8FLQooWpdqQIFm0yX9469La%2FWl3YaZ%2BBcsDlHXQbi2M3%2FDAyfR0sSNeLMj2sWkga21Rj2u7xb7bvW689hHTvol4uP1pv88kZDUmJ1qjz7jeGfV78glPAJE4B3Sl1Lj71SgpaFeB9MkKM6VbZL1l98VjjcmNc9Qz9oRqQQyQtTWj4bV2r1lRqobPzmC5yfd5ZrSMqN5O09Z7MZkNLePyhX3x%2FqhC9qvSNdE1oj%2BRVa71QOy6tsrloTRtBmfJDd66rC7WnFkcGxU%2Fv0jlaWpCWX%2FqsG518nJwSz2EvSDNQPMd17oiMBY7syX8KJLCbum9Q%3D%3D"
+    RS512: "SgSO79ZDzvzFbiVM+XIMSf8FLQooWpdqQIFm0yX9469La/Wl3YaZ+BcsDlHXQbi2M3/DAyfR0sSNeLMj2sWkga21Rj2u7xb7bvW689hHTvol4uP1pv88kZDUmJ1qjz7jeGfV78glPAJE4B3Sl1Lj71SgpaFeB9MkKM6VbZL1l98VjjcmNc9Qz9oRqQQyQtTWj4bV2r1lRqobPzmC5yfd5ZrSMqN5O09Z7MZkNLePyhX3x/qhC9qvSNdE1oj+RVa71QOy6tsrloTRtBmfJDd66rC7WnFkcGxU/v0jlaWpCWX/qsG518nJwSz2EvSDNQPMd17oiMBY7syX8KJLCbum9Q=="
 
     # We generate the assertions by the given permutations of the known algorithms defined above.
   ( (alg) =>

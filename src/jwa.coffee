@@ -1,5 +1,29 @@
-crypto      = require "crypto"
-querystring = require "querystring"
+###
+# (The MIT License)
+#
+# Copyright (c) 2012 Bernardo &lt;bernardo.gomezpalacio@gmail.com&gt;
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# 'Software'), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+###
+
+crypto  = require "crypto"
 
 #
 # The following is based on [JSON Web Algorithms (JWA) v02](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt):
@@ -81,7 +105,7 @@ class NoneAlgorithm
 
 NONE_ALG = new NoneAlgorithm
 
-exports.newNone = newNone = ( ) -> NONE_ALG
+newNone = ( ) -> NONE_ALG
 
 
   # Provides the HMAC implementation of the **HS256**, **HS384** and **HS512** algorithms.
@@ -127,11 +151,12 @@ class HMACAlgorithm
 
   digest: (encoding = "base64") ->
     throw new Error "There is no reference to the hmac object!" unless @hmac
-    querystring.escape @hmac.digest(encoding)
+    @hmac.digest(encoding)
 
   sign: (encoding) -> @digest(encoding)
 
-module.exports.newHMAC = newHMAC = (alg, key) ->  new HMACAlgorithm(alg, key)
+newHMAC = (alg, key) ->  
+  new HMACAlgorithm(alg, key)
 
 
   #  
@@ -181,9 +206,9 @@ class RSAlgorithm
 
   sign: (format = "base64") ->
     @_assertSigner()
-    querystring.escape @signer.sign(@key_PEM, format)
+    @signer.sign(@key_PEM, format)
 
-module.exports.newRS = newRS = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
+newRS = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
 
   #  
   #  Implementation of digital signature verifier for RSA SHA-256, RSA SHA-384, or RSA SHA-512
@@ -276,9 +301,7 @@ module.exports.provider = jwa_provider = (code) ->
     
     when "RS256", "RS384", "RS512" then (key) => newRS(code, key)
     
-    when "ES256", "ES384", "ES512" then throw new Error "ECDSA not yet implemented."
+    when "ES256", "ES384", "ES512" then undefined #throw new Error "ECDSA not yet implemented."
 
-    else throw new Error "There is no JWA Provider for #{code}!"
-
-
+    else undefined #throw new Error "There is no JWA Provider for #{code}!"
 

@@ -1,35 +1,58 @@
-crypto = require  'crypto'
+###
+# (The MIT License)
+#
+# Copyright (c) 2011 Kazuhito Hokamura <k.hokamura@gmail.com>
+# Copyright (c) 2012 Bernardo &lt;bernardo.gomezpalacio@gmail.com&gt;
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# 'Software'), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+###
 
-specVersion = ""
+#
+# * [JWT](http://tools.ietf.org/html/draft-jones-json-web-token-10) draft-jones-json-web-token-10
+# * [JWA](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt) draft-ietf-jose-json-web-algorithms-02
+# * [JWS](http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-02) draft-ietf-jose-json-web-signature-02
+# * [JWE](http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-02) draft-ietf-jose-json-web-encryption-02
+# * [JWK](http://tools.ietf.org/html/draft-ietf-jose-json-web-key-02) draft-ietf-jose-json-web-key-02
+#
+#
+#
 
-algorithms =
-  HS256: 'sha256'
-  HS384: 'sha384'
-  HS512: 'sha512'
-  RS256: 'rs256'
+# Dependencies
+# ============
+# Node
+crypto  = require "crypto"
+qstring = require "querystring"
+
+# Lip
+jwa = require "./jwa"
+ju  = require "./utils"
 
 
-  #  function NoSuchAlgorithmException(message) {
-  #  this.message = message
-  #  this.toString = function() { return "No such algorithm: "+this.message }
-  #}
-  #function NotImplementedException(message) {
-  #  this.message = message
-  #  this.toString = function() { return "Not implemented: "+this.message }
-  #}
-  #function InputException(message) {
-  #  this.message = message
-  #  this.toString = function() { return "Malformed input: "+this.message }
-  #}
+# version of the specification we are based on. 
+module.exports.specVersion = "draft-jones-json-web-token-10"
 
-  #  Decode jwt 
-  # @param {Object} token
-  # @param {String} key 
-  # @param {Boolean} noVerify 
-  # @return {Object} payload
-  # @api public
-
-jwt_decode = (token, key, noVerify) ->
+  #
+  #
+  #
+  #
+module.exports.jwt_decode = jwt_decode = (token) ->
   # check seguments
   segments = token.split '.'
 
@@ -41,88 +64,33 @@ jwt_decode = (token, key, noVerify) ->
   signatureSeg = segments[2]
 
   # base64 decode and parse JSON
-  header = JSON.parse base64urlDecode(headerSeg)
-  payload = JSON.parse base64urlDecode(payloadSeg)
-  
-  unless noVerify
-    signingMethod = algorithmMap[header.alg]
-
-    throw new Error('Algorithm not supported') unless signingMethod
-    # verify signature. `sign` will return base64 string.
-    signingInput = [headerSeg, payloadSeg].join '.'
-    throw new Error('Signature verification failed') unless (signatureSeg == sign(signingInput, key, signingMethod)) 
-    
-  payload
-
+  header    = JSON.parse ju.base64urlDecode(headerSeg)
+  claim     = JSON.parse ju.base64urlDecode(payloadSeg)
+  #  
+  { header: header, claim: claim, signature: signatureSeg, encoded_jwt : token }
 
  #
- # Encode jwt
+ # 
  #
- # @param {Object} payload
- # @param {String} key 
- # @param {String} algorithm 
- # @return {String} token
- # @api public
- #
- #
-jwt_encode = (payload, key, algorithm = "HS256") ->
+module.exports.jwt_encode = (claim, key, algorithm = "HS256") ->
   throw new Error 'Argument key is require' unless key
-  # Check algorithm, default is HS256
 
-  signingMethod = algorithmMap[algorithm]
-  throw new Error "Algorithm #{algorithm} is not yet supported." unless signingMethod
+  jwa_provider  = jwa.provider algorithm
+  throw new Error "Algorithm #{algorithm} is not yet supported." unless jwa_provider
 
-  #header, typ is fixed value.
+  jwa_signer = jwa_provider key
+
   header =
     typ: 'JWT'
     alg: algorithm
 
   #create segments, all segment should be base64 string
   segments = []
-  segments.push(base64urlEncode(JSON.stringify(header)))
-  segments.push(base64urlEncode(JSON.stringify(payload)))
-  segments.push(sign(segments.join('.'), key, signingMethod))
+  segments.push ju.base64urlEncode(JSON.stringify(header))
+  segments.push ju.base64urlEncode(JSON.stringify(claim))
+
+  jwa_signer.update( segments.join "." )
+  segments.push( ju.base64urlEscape(jwa_signer.sign()) )
   
   segments.join('.')
-
-
-sign = (input, key, method) ->
-  base64str = crypto.createHmac(method, key).update(input).digest('base64')
-  base64urlEscape(base64str)
-
-
-base64urlDecode = (str) ->
-  new Buffer(base64urlUnescape(str), 'base64').toString()
-
-base64urlUnescape = (str) ->
-  str += Array(5 - str.length % 4).join('=')
-  str.replace(/\-/g, '+').replace(/_/g, '/')
-
-base64urlEncode = (str) ->
-  base64urlEscape(new Buffer(str).toString('base64'))
-
-base64urlEscape = (str) ->
-  str.replace(///+///g, '-')#.replace(/\//g, '_').replace(/=/g, '')
-
-base64urlEncode = (arg) ->
-    s = window.atob(arg) # Standard base64 encoder
-    s = s.split('=')[0]  # Remove any trailing '='s
-    s = s.replace('+', '-', 'g') # 62nd char of encoding
-    s = s.replace('/', '_', 'g') # 63rd char of encoding
-
-base64urldecode = (arg) ->
-  s = arg
-  s = s.replace('-', '+', 'g') # 62nd char of encoding
-  s = s.replace('_', '/', 'g') # 63rd char of encoding
-  switch s.length % 4 # Pad with trailing '='s
-    #No pad chars in this case
-    when 0 then
-    # Two pad chars
-    when 2 then s += "=="
-    # One pad char
-    when 3 then s += "="
-    # else
-    else throw new InputException("Illegal base64url string!")
-  
-  return window.btoa(s) #Standard base64 decoder
 
