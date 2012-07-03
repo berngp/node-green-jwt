@@ -50,25 +50,24 @@ fixtures =
 
 describe 'JWA Implementation for MAC', ->
 
-  #with a known key
+  # Known Algorithms that should be asserted as defined by the JWA specification 
+  knownAlg = ["HS256", "HS384", "HS512"]
+  # Known HMAC Key
   hmacKey = "hmac-key"
 
-  # and a known set of Algorithms to test
-  knownAlg = ["HS256", "HS384", "HS512"]
-
-  # and a set of expectations (mapped to the actual algorithms, note that they are already urlencoded)
+  # Precalculated expectations, note that they are base64 - URL Encoded
   expectations =
     HS256 : "6SN4r6MZmNNKkok0iK0E8bu9H7zoRHYZXXhPLr5M6eU%3D"
     HS384 : "Mqzvb4sukLBQ9MTVroERBO%2FPMUwwe03hi4BVQoEPo0lc3z32vd8mX0YSfsM%2FhX96"
     HS512 : "qG1p5FRVIbAG02OSFc%2F3JlRflbLeVyBe5jJmejM8%2F%2BJHVD56ia2A5JOFJ3p%2F0uulG7fQQ4M%2FswGvqMlukUOhNw%3D%3D"
 
-  # we generate permutations per known algorithm to assert the creation of the HMAC instance
+  # We generate permutations per known algorithm to assert the creation of the HMAC instance
   # and digestion of the data.
   ( (alg) =>
     # specification of the supporting algorithm
     it "supports #{alg}", ->
       #instance of the HMAC given the algorithm and key
-      hmac = jwa.HMACFactory alg, hmacKey
+      hmac = jwa.provider(alg)(hmacKey)
       should.exist hmac
       # update the hmac algorithm instance with the kown data 
       hmac.update(fixtures.dataString)
@@ -87,8 +86,9 @@ describe 'JWA Implementation for MAC', ->
 
 describe 'JWA Implementation for RSA', ->
 
+  # Known Algorithms that should be asserted as defined by the JWA specification
   kownAlg = ["RS256", "RS384", "RS512"]
-
+  # Known RSA Private Key
   key_PEM = """-----BEGIN RSA PRIVATE KEY-----
 MIIEpgIBAAKCAQEAuBLG/WubpeE3HaLMUTyqqTDCfQpg/bqXDeUr6P8k54jNNLad
 Nq+TXl/xtKqZ8SMdwYJsQ2BenENbsx80rJJJ4YTorrBYV1atyrW6hb+9llildKKF
@@ -117,7 +117,7 @@ hrnnw07pfG7XHI8piSgq7nruQ+OQVClbtng5SWkX63FIXItSoHOFTG/3YWf7wp9c
 3ipkznYxJ8eGEOXNRtoZPXwM6BMYhwsswiPvxSX1hUUpr0HN/wXMaIL8
 -----END RSA PRIVATE KEY-----  
 """
-
+  # Precalcualted Expectations (note that they are already base64 - URL Encoded)
   expectations =
     RS256: "NrkVPyb9Uux7bZNKrj4k5lK1tgYU8qom8q7m0tGfFAxRxESeEi6E60Aq1zO8fFwJDANLh8Ny1qO29xbv3jkFUoGB5OOYbFmCOW%2FJZMPX%2BDBZzp6DpCvM8vFuo5PSbgZrh4oYhS7PAObU9prekIRCWeVl52tecc3bJFTunP7l35Ot%2BBMSkiG2tZ2sMMGxa08TsF1DML%2FPAbYeO0u%2BGZ2M4bZe5PA1upnpPCHdV%2FWjaX3uUtcr4cQ2IeeLi5Ajo1MDr%2Boc1Qub%2FOaBERXwsYD2mhllBtIXsiJyNX8D3lWsaK4TeNWLQ62hvJcsXIkGaVaXoPgJOjrKumcQ5YtyUynDhQ%3D%3D"
 
@@ -125,13 +125,16 @@ hrnnw07pfG7XHI8piSgq7nruQ+OQVClbtng5SWkX63FIXItSoHOFTG/3YWf7wp9c
 
     RS512: "SgSO79ZDzvzFbiVM%2BXIMSf8FLQooWpdqQIFm0yX9469La%2FWl3YaZ%2BBcsDlHXQbi2M3%2FDAyfR0sSNeLMj2sWkga21Rj2u7xb7bvW689hHTvol4uP1pv88kZDUmJ1qjz7jeGfV78glPAJE4B3Sl1Lj71SgpaFeB9MkKM6VbZL1l98VjjcmNc9Qz9oRqQQyQtTWj4bV2r1lRqobPzmC5yfd5ZrSMqN5O09Z7MZkNLePyhX3x%2FqhC9qvSNdE1oj%2BRVa71QOy6tsrloTRtBmfJDd66rC7WnFkcGxU%2Fv0jlaWpCWX%2FqsG518nJwSz2EvSDNQPMd17oiMBY7syX8KJLCbum9Q%3D%3D"
 
+    # We generate the assertions by the given permutations of the known algorithms defined above.
   ( (alg) =>
     it "supports #{alg}", ->
-      rsSigner = jwa.RSFactory alg, key_PEM
+      rsSigner = jwa.provider(alg)(key_PEM)
       rsSigner.update(fixtures.dataString)
       signed = rsSigner.sign()
 
       signed.should.equal expectations[alg]
   
   )(alg) for alg in kownAlg
+
+
 
