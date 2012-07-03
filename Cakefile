@@ -19,7 +19,6 @@ handleError = (err) ->
     log "Remember that you need: coffee-script@0.9.4 and mocha@0.5.2", red
     console.log err.stack
 
-
 task 'install', 'Executes an install of the required packages.', ->
   exec 'npm install'
 
