@@ -21,10 +21,11 @@ Pleae review the `pacagke.json` for the full set of dependencies.
 
 ## License 
 
+Unless stated elsewhere, file headers or otherwise, the license as stated bellow:
+
 (The MIT License)
 
-Copyright (c) 2011 Kazuhito Hokamura <k.hokamura@gmail.com>
-Copyright (c) 2012 Bernardo &lt;bernardo.gomezpalacio@gmail.com&gt;
+Copyright (c) 2012 Bernardo Gomez Palacio &lt;bernardo.gomezpalacio@gmail.com&gt;, Kazuhito Hokamura &lt;k.hokamura@gmail.com&gt;
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
