@@ -1,29 +1,8 @@
-###
-# (The MIT License)
-#
-# Copyright (c) 2012 Bernardo &lt;bernardo.gomezpalacio@gmail.com&gt;
-#
-# Permission is hereby granted, free of charge, to any person obtaining
-# a copy of this software and associated documentation files (the
-# 'Software'), to deal in the Software without restriction, including
-# without limitation the rights to use, copy, modify, merge, publish,
-# distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to
-# the following conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-###
-
+# Node
 crypto  = require "crypto"
+# Lib
+ju      = require "./utils"
+
 
 #
 # The following is based on [JSON Web Algorithms (JWA) v02](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt):
@@ -63,20 +42,6 @@ crypto  = require "crypto"
 #  implementations also support the RSA SHA-256 and ECDSA P-256 SHA-256
 #  algorithms.  Support for other algorithms and key sizes is OPTIONAL.
 #
-
-jwa_to_openssl = (alg) ->
-  _algOssl =
-    # HMAC
-    HS256 : "SHA256"
-    HS384 : "SHA384"
-    HS512 : "SHA512"
-    # RSA
-    RS256 : "RSA-SHA256"
-    RS384 : "RSA-SHA384"
-    RS512 : "RSA-SHA512"
-
-  _algOssl[alg]
-
 jwa_table =
     HMAC :
       HS256 : "SHA256"
@@ -87,13 +52,14 @@ jwa_table =
       RS384 : "RSA-SHA384"
       RS512 : "RSA-SHA512"
 
-  #
-  # To support use cases where the content is secured by a means other
-  # than a digital signature or MAC value, JWSs MAY also be created
-  # without them.  These are called "Plaintext JWSs".  Plaintext JWSs
-  # MUST use the "alg" value "none", and are formatted identically to
-  # other JWSs, but with an empty JWS Signature value.
-  #
+
+#
+# To support use cases where the content is secured by a means other
+# than a digital signature or MAC value, JWSs MAY also be created
+# without them.  These are called "Plaintext JWSs".  Plaintext JWSs
+# MUST use the "alg" value "none", and are formatted identically to
+# other JWSs, but with an empty JWS Signature value.
+#
 class NoneAlgorithm
 
   update: () ->
@@ -105,21 +71,35 @@ class NoneAlgorithm
 
 NONE_ALG = new NoneAlgorithm
 
-newNone = ( ) -> NONE_ALG
+newNoneAl = ( ) -> NONE_ALG
+
+class NoneVerifier
+
+  verify: (jwt_req) ->
+    jwt_header  = jwt_req?.header
+    jwt_claim   = jwt_req?.claim
+    jwt_enc_sig = jwt_req?.segments?[2]
+
+    return false unless jwt_header.alg == "none"
+    return false if     jwt_enc_sig
+    true
+
+newNoneVerifier = () -> new NoneVerifier
 
 
-  # Provides the HMAC implementation of the **HS256**, **HS384** and **HS512** algorithms.
-  # Cryptographic algorithms are provided by **Node's** [Crypto library](http://nodejs.org/api/crypto.html)
-  #
-  # As mentioned in the specification the HMAC (Hash-based Message Authentication Codes) enable the usage
-  # of a *known secret*, this can be used to demonstrate that the MAC matches the hashed content, 
-  # in this case the JWS Secured Input, which therefore demonstrates that whoever generated the MAC was in
-  # possession of the secret. 
-  #
-  # To review the specifics of the algorithms please review chapter
-  # "3.2.  MAC with HMAC SHA-256, HMAC SHA-384, or HMAC SHA-512" of
-  # the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
-  #
+
+# Provides the HMAC implementation of the **HS256**, **HS384** and **HS512** algorithms.
+# Cryptographic algorithms are provided by **Node's** [Crypto library](http://nodejs.org/api/crypto.html)
+#
+# As mentioned in the specification the HMAC (Hash-based Message Authentication Codes) enable the usage
+# of a *known secret*, this can be used to demonstrate that the MAC matches the hashed content, 
+# in this case the JWS Secured Input, which therefore demonstrates that whoever generated the MAC was in
+# possession of the secret. 
+#
+# To review the specifics of the algorithms please review chapter
+# "3.2.  MAC with HMAC SHA-256, HMAC SHA-384, or HMAC SHA-512" of
+# the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
+#
 class HMACAlgorithm
 
   _algs = jwa_table.HMAC
@@ -136,13 +116,13 @@ class HMACAlgorithm
     @alg = alg.toUpperCase()
     throw Error "Algorithm #{@alg} is not supported by HMAC." unless _algs[@alg]
 
-    @osslAlg = jwa_to_openssl @alg
+    @osslAlg = _algs[@alg]
     new Error "Algorithm #{@alg} is not supported by the specification." unless @osslAlg
 
     try
       @hmac = crypto.createHmac @osslAlg, @key
     catch error
-      throw new Error "HMAC does not support algorithm #{@alg} => #{@osslAlg}!"
+      throw new Error "HMAC does not support algorithm #{@alg} => #{@osslAlg}! #{error}"
 
   update: (data) ->
     throw new Error "There is no reference to the hmac object!" unless @hmac
@@ -151,35 +131,67 @@ class HMACAlgorithm
 
   digest: (encoding = "base64") ->
     throw new Error "There is no reference to the hmac object!" unless @hmac
-    @hmac.digest(encoding)
+    ju.base64urlEscape( @hmac.digest(encoding) )
 
   sign: (encoding) -> @digest(encoding)
 
-newHMAC = (alg, key) ->  
+
+# Factory to create *HMAC Algorithm* instances
+newHMACAl = (alg, key) ->
   new HMACAlgorithm(alg, key)
 
+# Todo: Move to JWS
+class HMACVerifier
 
-  #  
-  #  Implementation of digital signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512
-  #
-  #  To review the specifics of the algorithms please review chapter
-  #  "3.3.  Digital Signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512" of
-  #  the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
-  #  
-  #  Important elements to understand are.
-  #  * RSASSA-PKCS1-v1_5 digital signature algorithm (commonly known as PKCS#1), 
-  #  using SHA-256, SHA-384, or SHA-512 as the hash function. 
-  #  
-  #  The *"alg"* (algorithm) header parameter values used in the JWS Header to indicate that 
-  #  the *Encoded JWS Signature* contains a **base64url** encoded **RSA digital signature* using the
-  #  respective hash function are:
-  #  * "RS256"
-  #  * "RS384"
-  #  * "RS512" 
-  #
-  #  **A key of size 2048 bits or larger MUST be used with these algorithms.**
-  #
-  #
+  verify: (jwt_req, key) ->
+    throw new Error "jwt request not specified" unless jwt_req
+    throw new Error "key not specified" unless key
+
+    _typ     = jwt_req?.header?.typ
+    _alg     = jwt_req?.header?.alg
+    _claim   = jwt_req?.claim
+    _enc_sig = jwt_req?.segments?[2]
+
+    # is the header a jwt header?
+    return false unless _typ == "JWT"
+    # is the algorithm supported/available for hmac ?
+    return false unless jwa_table.HMAC[_alg]
+    # do we have an encoded signature?
+    return false unless _enc_sig
+    # do we have the implementation of such hmac algorithm?
+    algImpl = jwa_provider(_alg)
+    return false unless algImpl
+    # set the signer
+    signer = algImpl key
+    # if so we proceed to sign the segments that belong to the header and the claim
+    signer.update "#{jwt_req.segments?[0]}.#{jwt_req.segments?[1]}"
+    # and assert that they are equal to the expected signature
+    signer.sign() == _enc_sig
+
+# Todo: Move to JWS
+newHMACVerifier = () -> new HMACVerifier
+
+#  
+#  Implementation of digital signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512
+#
+#  To review the specifics of the algorithms please review chapter
+#  "3.3.  Digital Signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512" of
+#  the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
+#  
+#  Important elements to understand are.
+#  * RSASSA-PKCS1-v1_5 digital signature algorithm (commonly known as PKCS#1), 
+#  using SHA-256, SHA-384, or SHA-512 as the hash function. 
+#  
+#  The *"alg"* (algorithm) header parameter values used in the JWS Header to indicate that 
+#  the *Encoded JWS Signature* contains a **base64url** encoded **RSA digital signature* using the
+#  respective hash function are:
+#  * "RS256"
+#  * "RS384"
+#  * "RS512" 
+#
+#  **A key of size 2048 bits or larger MUST be used with these algorithms.**
+#
+#
 class RSAlgorithm
   _algs = jwa_table.RSA
 
@@ -190,10 +202,10 @@ class RSAlgorithm
     throw Error "A defined algorithm is required." unless alg
 
     @alg = alg.toUpperCase()
-    throw Error "Algorithm #{@alg} is not supported by RSA." unless _algs[@alg]
+    throw Error "Algorithm #{_alg} is not supported by RSA." unless _algs[@alg]
 
-    @osslAlg = jwa_to_openssl @alg
-    new Error "Algorithm #{@alg} is not supported by the specification." unless @osslAlg
+    @osslAlg = _algs[@alg]
+    new Error "Algorithm #{_alg} is not supported by the specification." unless @osslAlg
 
     try
       @signer = crypto.createSign(@osslAlg)
@@ -206,73 +218,81 @@ class RSAlgorithm
 
   sign: (format = "base64") ->
     @_assertSigner()
-    @signer.sign(@key_PEM, format)
+    _signed = @signer.sign(@key_PEM, format)
+    _enc_sign = ju.base64urlEscape _signed
+    _enc_sign
 
-newRS = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
+newRSAl = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
 
-  #  
-  #  Implementation of digital signature verifier for RSA SHA-256, RSA SHA-384, or RSA SHA-512
-  #  that uses a *Public Key* to assert the content.
-  #
-  #  To review the specifics of the algorithms please review chapter
-  #  "3.3.  Digital Signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512" of
-  #  the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
-  #  
-  #  The *Encoded JWS Signature* contains a **base64url** encoded **RSA digital signature*. The
-  #  following hash functions are available:
-  #  * "RS256"
-  #  * "RS384"
-  #  * "RS512" 
-  #
-  #  **A key of size 2048 bits or larger MUST be used with these algorithms.**
-  #
+#  
+#  Implementation of verification of a RSA SHA-256, RSA SHA-384, or RSA SHA-512 signature.
+#
+#  To review the specifics of the algorithms please review chapter
+#  "3.3.  Digital Signature with RSA SHA-256, RSA SHA-384, or RSA SHA-512" of
+#  the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
+#  
+#  The *Encoded JWS Signature* contains a **base64url** encoded **RSA digital signature*. The
+#  following hash functions are available.
+#  
+#  Per specification the validation should be implemented as follows:
+#
+#   o.  Take the Encoded JWS Signature and base64url decode it into a
+#       byte array.  If decoding fails, the JWS MUST be rejected.
+#
+#   0.  Submit the bytes of the UTF-8 representation of the JWS Secured
+#       Input (which is the same as the ASCII representation) and the
+#       public key corresponding to the private key used by the signer to
+#       the RSASSA-PKCS1-V1_5-VERIFY algorithm using the corresponding SHA hash function (e.g. SHA-256).
+#
+#   0.  If the validation fails, the JWS MUST be rejected.
+#
+#
 class RSVerifier
   
-  _assertState : () ->
-    throw new Error "The `verifier` reference is undefined!" unless @verifier
-
-  constructor: (@alg = "RSA-SHA256") ->
+  _createVerifier = (alg) ->
     try
-      @verifier = crypto.createVerifier(@alg)
+      crypto.createVerify(alg)
     catch error
-      throw new Error "Unable to create a verifier with algorithm #{@alg}!"
+      throw new Error "Unable to create a verifier with algorithm #{alg}! #{error}"
   
-  update: (data) ->
-    _assertState()
-    @verifier.update data
+  verify: (jwt_req, public_key) ->
+    throw new Error "jwt request not specified" unless jwt_req
+    throw new Error "public_key not specified" unless public_key
 
-  verify: (objPEM, signature, format = "base64") ->
-    _assertState()
-    @verifier.verify(objPEM, signature, format)
- 
+    _typ     = jwt_req?.header?.typ
+    _alg     = jwt_req?.header?.alg
+    _claim   = jwt_req?.claim
+    _enc_sig = jwt_req?.segments?[2]
+
+    # is the header a jwt header?
+    return false unless _typ == "JWT"
+    # do we have an encoded signature?
+    return false unless _enc_sig
+    # is the algorithm supported/available for RSA ?
+    openSSL = jwa_table.RSA[_alg]
+    return false unless openSSL
+    # can we create a verifier for the implementation of such algorithm?
+    _verifier = _createVerifier openSSL
+    return false unless _verifier
+    # update the verifier with the that used to generate the key
+    _verifier.update "#{jwt_req.segments[0]}.#{jwt_req.segments[1]}"
+    # we un-encode the encoded signature
+    _sig = ju.base64urlUnescape _enc_sig
+    # finally we verify
+    _verifier.verify public_key, _sig, "base64"
+
+newRSVerifier = () -> new RSVerifier
+
 
 #
 # TODO: Implement 
 #       3.4.  Digital Signature with ECDSA P-256 SHA-256, ECDSA P-384 SHA-384,
 #             or ECDSA P-521 SHA-512
-#
-#   The Elliptic Curve Digital Signature Algorithm (ECDSA) is defined by
-#   FIPS 186-3 [FIPS.186-3].  ECDSA provides for the use of Elliptic
-#   Curve cryptography, which is able to provide equivalent security to
-#   RSA cryptography but using shorter key sizes and with greater
-#   processing speed.  This means that ECDSA digital signatures will be
-#   substantially smaller in terms of length than equivalently strong RSA
-#   digital signatures.
-#
-#   This specification defines the use of ECDSA with the P-256 curve and
-#   the SHA-256 cryptographic hash function, ECDSA with the P-384 curve
-#   and the SHA-384 hash function, and ECDSA with the P-521 curve and the
-#   SHA-512 hash function.  The P-256, P-384, and P-521 curves are also
-#   defined in FIPS 186-3.  The "alg" (algorithm) header parameter values
-#   "ES256", "ES384", and "ES512" are used in the JWS Header to indicate
-#   that the Encoded JWS Signature contains a base64url encoded ECDSA
-#   P-256 SHA-256, ECDSA P-384 SHA-384, or ECDSA P-521 SHA-512 digital
-#   signature, respectively.
-#
-#   A key of size 160 bits or larger MUST be used with these algorithms.
-#
 
 
+  #
+  # Returns a function that holds an *Encryption Algorithm*, or `undefined` if the
+  # algorithm is not supported or not found. 
   #
   #   +--------------------+----------------------------------------------+
   #   | alg Parameter      | Digital Signature or MAC Algorithm           |
@@ -295,13 +315,29 @@ class RSVerifier
   #
 module.exports.provider = jwa_provider = (code) ->
   switch code
-    when "none" then () => newNone()
+    when "none" then () => newNoneAl()
     
-    when "HS256", "HS384", "HS512" then (key) => newHMAC(code, key)
+    when "HS256", "HS384", "HS512" then (key) => newHMACAl(code, key)
     
-    when "RS256", "RS384", "RS512" then (key) => newRS(code, key)
+    when "RS256", "RS384", "RS512" then (key) => newRSAl(code, key)
     
     when "ES256", "ES384", "ES512" then undefined #throw new Error "ECDSA not yet implemented."
 
     else undefined #throw new Error "There is no JWA Provider for #{code}!"
+
+  #
+  # Provides
+  #
+module.exports.verifier = jwa_verifier = (code) ->
+  switch code
+    when "none" then newNoneVerifier()
+    
+    when "HS256", "HS384", "HS512" then newHMACVerifier()
+    
+    when "RS256", "RS384", "RS512" then newRSVerifier()
+    
+    when "ES256", "ES384", "ES512" then undefined #throw new Error "ECDSA not yet implemented."
+
+    else undefined #throw new Error "There is no JWA Provider for #{code}!"
+
 
