@@ -8,9 +8,9 @@
   },
   "repository" : {
     "type" : "git",
-    "url"  : "git://github.com/berngp/node-jot.git"
+    "url"  : "git://github.com/berngp/node-green-jwt.git"
   },
-  "homepage" : "http://github.com/berngp/node-jot",
+  "homepage" : "http://github.com/berngp/node-green-jwt",
   "contributors" : [
       {
         "name": "Bernardo Gomez Palacio",
