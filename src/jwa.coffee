@@ -7,16 +7,12 @@ ju      = require "./utils"
 #
 # The following is based on [JSON Web Algorithms (JWA) v02](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt):
 #
-# The JSON Web Algorithms (JWA) specification enumerates cryptographic
-# algorithms and identifiers to be used with the JSON Web Signature
-# (JWS) [JWS] and JSON Web Encryption (JWE) [JWE] specifications.
-# Enumerating the algorithms and identifiers for them in this
-# specification, rather than in the JWS and JWE specifications, is
-# intended to allow them to remain unchanged in the face of changes in
-# the set of required, recommended, optional, and deprecated algorithms
-# over time.  This specification also describes the semantics and
-# operations that are specific to these algorithms and algorithm
-# families.
+# The JSON Web Algorithms (JWA) specification enumerates cryptographic algorithms and identifiers to be used with the 
+# JSON Web Signature (JWS) [JWS] and JSON Web Encryption (JWE) [JWE] specifications.  Enumerating the algorithms and
+# identifiers for them in this specification, rather than in the JWS and JWE specifications, is intended to allow them
+# to remain unchanged in the face of changes in the set of required, recommended, optional, and deprecated algorithms
+# over time. This specification also describes the semantics and operations that are specific to these algorithms and 
+# algorithm families.
 #
 #   +--------------------+----------------------------------------------+
 #   | alg Parameter      | Digital Signature or MAC Algorithm           |
@@ -37,30 +33,44 @@ ju      = require "./utils"
 #   | none               | No digital signature or MAC value included   |
 #   +--------------------+----------------------------------------------+
 #
-#  Of these algorithms, only HMAC SHA-256 and "none" MUST be implemented
-#  by conforming JWS implementations.  It is RECOMMENDED that
-#  implementations also support the RSA SHA-256 and ECDSA P-256 SHA-256
-#  algorithms.  Support for other algorithms and key sizes is OPTIONAL.
+#  Of these algorithms, only HMAC SHA-256 and "none" MUST be implemented by conforming JWS implementations. 
+#  It is RECOMMENDED that implementations also support the RSA SHA-256 and ECDSA P-256 SHA-256 algorithms.  
+#  Support for other algorithms and key sizes is OPTIONAL.
 #
 jwa_table =
-    HMAC :
+  NONE :
+    TYPE : "SIGNATURE"
+  HMAC :
+    TYPE    : "SIGNATURE"
+    HASH_AL :
       HS256 : "SHA256"
       HS384 : "SHA384"
       HS512 : "SHA512"
-    RSA :
+  RSA :
+    TYPE    : "SIGNATURE"
+    HASH_AL :
       RS256 : "RSA-SHA256"
       RS384 : "RSA-SHA384"
       RS512 : "RSA-SHA512"
 
 
+class JwaAlgorithm
+
+  type : () ->
+    jwa_table?[@alg]?.TYPE
+
+  hash : (alg) ->
+    jwa_table?[@alg]?.HASH_AL[alg]
+
+
 #
-# To support use cases where the content is secured by a means other
-# than a digital signature or MAC value, JWSs MAY also be created
-# without them.  These are called "Plaintext JWSs".  Plaintext JWSs
-# MUST use the "alg" value "none", and are formatted identically to
+# To support use cases where the content is secured by a means other than a digital signature or MAC value, JWSs MAY also be created
+# without them.  These are called "Plaintext JWSs".  Plaintext JWSs MUST use the "alg" value "none", and are formatted identically to
 # other JWSs, but with an empty JWS Signature value.
 #
-class NoneAlgorithm
+class NoneSigner extends JwaAlgorithm
+
+  alg : "NONE"
 
   update: () ->
 
@@ -69,11 +79,13 @@ class NoneAlgorithm
   sign: () -> @digest()
 
 
-NONE_ALG = new NoneAlgorithm
+NONE_SIGNER = new NoneSigner
 
-newNoneAl = ( ) -> NONE_ALG
+newNoneSigner = ( ) -> NONE_SIGNER
 
-class NoneVerifier
+class NoneVerifier extends JwaAlgorithm
+
+  alg : "NONE"
 
   verify: (jwt_req) ->
     jwt_header  = jwt_req?.header
@@ -100,24 +112,21 @@ newNoneVerifier = () -> new NoneVerifier
 # "3.2.  MAC with HMAC SHA-256, HMAC SHA-384, or HMAC SHA-512" of
 # the [Specification](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt).
 #
-class HMACAlgorithm
+class HMACSigner extends JwaAlgorithm
 
-  _algs = jwa_table.HMAC
+  alg : "HMAC"
 
-    #
-    # Creates and returns an HMAC object, a cryptographic HMAC binded to the given algorithm and key.
-    # The supported algorithm is dependent on the available algorithms in *OpenSSL* - to get the list
-    # type `openssl list-message-digest-algorithms` in the terminal. If you provide an algorithm that is
-    # not supported an error will be thrown.
-    #
+  #
+  # Creates and returns an HMAC object, a cryptographic HMAC binded to the given algorithm and key.
+  # The supported algorithm is dependent on the available algorithms in *OpenSSL* - to get the list
+  # type `openssl list-message-digest-algorithms` in the terminal. If you provide an algorithm that is
+  # not supported an error will be thrown.
+  #
   constructor: (alg = "HS256" , @key) ->
     throw Error "A defined algorithm is required." unless alg
 
-    @alg = alg.toUpperCase()
-    throw Error "Algorithm #{@alg} is not supported by HMAC." unless _algs[@alg]
-
-    @osslAlg = _algs[@alg]
-    new Error "Algorithm #{@alg} is not supported by the specification." unless @osslAlg
+    @osslAlg = @hash(alg.toUpperCase())
+    throw Error "Algorithm #{@alg} is not supported by HMAC." unless @osslAlg
 
     try
       @hmac = crypto.createHmac @osslAlg, @key
@@ -137,11 +146,13 @@ class HMACAlgorithm
 
 
 # Factory to create *HMAC Algorithm* instances
-newHMACAl = (alg, key) ->
-  new HMACAlgorithm(alg, key)
+newHMACSigner = (alg, key) ->
+  new HMACSigner(alg, key)
 
 # Todo: Move to JWS
-class HMACVerifier
+class HMACVerifier extends JwaAlgorithm
+
+  alg: "HMAC"
 
   verify: (jwt_req, key) ->
     throw new Error "jwt request not specified" unless jwt_req
@@ -155,7 +166,7 @@ class HMACVerifier
     # is the header a jwt header?
     return false unless _typ == "JWT"
     # is the algorithm supported/available for hmac ?
-    return false unless jwa_table.HMAC[_alg]
+    throw new Error "Hash #{_alg} is not supported!" unless @hash( _alg)
     # do we have an encoded signature?
     return false unless _enc_sig
     # do we have the implementation of such hmac algorithm?
@@ -165,8 +176,10 @@ class HMACVerifier
     signer = algImpl key
     # if so we proceed to sign the segments that belong to the header and the claim
     signer.update "#{jwt_req.segments?[0]}.#{jwt_req.segments?[1]}"
-    # and assert that they are equal to the expected signature
-    signer.sign() == _enc_sig
+    # get signed value form the JWT
+    _actual_sign = signer.sign()
+    #compare
+    _actual_sign == _enc_sig
 
 # Todo: Move to JWS
 newHMACVerifier = () -> new HMACVerifier
@@ -192,20 +205,18 @@ newHMACVerifier = () -> new HMACVerifier
 #  **A key of size 2048 bits or larger MUST be used with these algorithms.**
 #
 #
-class RSAlgorithm
-  _algs = jwa_table.RSA
+class RSSigner extends JwaAlgorithm
+
+  alg : "RSA"
 
   _assertSigner : () ->
     throw Error "Signer is not defined!" unless @signer
 
   constructor: (alg = "RSA-SHA256", @key_PEM) ->
     throw Error "A defined algorithm is required." unless alg
-
-    @alg = alg.toUpperCase()
-    throw Error "Algorithm #{_alg} is not supported by RSA." unless _algs[@alg]
-
-    @osslAlg = _algs[@alg]
-    new Error "Algorithm #{_alg} is not supported by the specification." unless @osslAlg
+    
+    @osslAlg = @hash( alg.toUpperCase() )
+    new Error "Algorithm #{alg} is not supported by the specification." unless @osslAlg
 
     try
       @signer = crypto.createSign(@osslAlg)
@@ -222,8 +233,10 @@ class RSAlgorithm
     _enc_sign = ju.base64urlEscape _signed
     _enc_sign
 
-newRSAl = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
+newRSSigner = (alg, key_PEM) -> new RSSigner( alg, key_PEM )
 
+
+# TODO move verifier to JWS
 #  
 #  Implementation of verification of a RSA SHA-256, RSA SHA-384, or RSA SHA-512 signature.
 #
@@ -247,7 +260,9 @@ newRSAl = (alg, key_PEM) -> new RSAlgorithm( alg, key_PEM )
 #   0.  If the validation fails, the JWS MUST be rejected.
 #
 #
-class RSVerifier
+class RSVerifier extends JwaAlgorithm
+
+  alg : "RSA"
   
   _createVerifier = (alg) ->
     try
@@ -269,8 +284,8 @@ class RSVerifier
     # do we have an encoded signature?
     return false unless _enc_sig
     # is the algorithm supported/available for RSA ?
-    openSSL = jwa_table.RSA[_alg]
-    return false unless openSSL
+    openSSL = @hash(_alg)
+    throw new Error "Hash #{_alg} is not supported for this JWA #{@type}" unless openSSL
     # can we create a verifier for the implementation of such algorithm?
     _verifier = _createVerifier openSSL
     return false unless _verifier
@@ -290,44 +305,43 @@ newRSVerifier = () -> new RSVerifier
 #             or ECDSA P-521 SHA-512
 
 
-  #
-  # Returns a function that holds an *Encryption Algorithm*, or `undefined` if the
-  # algorithm is not supported or not found. 
-  #
-  #   +--------------------+----------------------------------------------+
-  #   | alg Parameter      | Digital Signature or MAC Algorithm           |
-  #   | Value              |                                              |
-  #   +--------------------+----------------------------------------------+
-  #   | HS256              | HMAC using SHA-256 hash algorithm            |
-  #   | HS384              | HMAC using SHA-384 hash algorithm            |
-  #   | HS512              | HMAC using SHA-512 hash algorithm            |
-  #   | RS256              | RSA using SHA-256 hash algorithm             |
-  #   | RS384              | RSA using SHA-384 hash algorithm             |
-  #   | RS512              | RSA using SHA-512 hash algorithm             |
-  #   | ES256              | ECDSA using P-256 curve and SHA-256 hash     |
-  #   |                    | algorithm                                    |
-  #   | ES384              | ECDSA using P-384 curve and SHA-384 hash     |
-  #   |                    | algorithm                                    |
-  #   | ES512              | ECDSA using P-521 curve and SHA-512 hash     |
-  #   |                    | algorithm                                    |
-  #   | none               | No digital signature or MAC value included   |
-  #   +--------------------+----------------------------------------------+
-  #
+#
+# Returns a function that holds an *Encryption Algorithm*, or `undefined` if the algorithm is not supported or not found. 
+#
+#   +--------------------+----------------------------------------------+
+#   | alg Parameter      | Digital Signature or MAC Algorithm           |
+#   | Value              |                                              |
+#   +--------------------+----------------------------------------------+
+#   | HS256              | HMAC using SHA-256 hash algorithm            |
+#   | HS384              | HMAC using SHA-384 hash algorithm            |
+#   | HS512              | HMAC using SHA-512 hash algorithm            |
+#   | RS256              | RSA using SHA-256 hash algorithm             |
+#   | RS384              | RSA using SHA-384 hash algorithm             |
+#   | RS512              | RSA using SHA-512 hash algorithm             |
+#   | ES256              | ECDSA using P-256 curve and SHA-256 hash     |
+#   |                    | algorithm                                    |
+#   | ES384              | ECDSA using P-384 curve and SHA-384 hash     |
+#   |                    | algorithm                                    |
+#   | ES512              | ECDSA using P-521 curve and SHA-512 hash     |
+#   |                    | algorithm                                    |
+#   | none               | No digital signature or MAC value included   |
+#   +--------------------+----------------------------------------------+
+#
 module.exports.provider = jwa_provider = (code) ->
   switch code
     when "none" then () => newNoneAl()
     
-    when "HS256", "HS384", "HS512" then (key) => newHMACAl(code, key)
+    when "HS256", "HS384", "HS512" then (key) => newHMACSigner code, key
     
-    when "RS256", "RS384", "RS512" then (key) => newRSAl(code, key)
+    when "RS256", "RS384", "RS512" then (key) => newRSSigner code, key
     
     when "ES256", "ES384", "ES512" then undefined #throw new Error "ECDSA not yet implemented."
 
     else undefined #throw new Error "There is no JWA Provider for #{code}!"
 
-  #
-  # Provides
-  #
+#
+# Provides
+#
 module.exports.verifier = jwa_verifier = (code) ->
   switch code
     when "none" then newNoneVerifier()

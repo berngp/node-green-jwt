@@ -29,9 +29,11 @@ describe 'JWT Implementation with HMAC encryption ', ->
     
   it "should decode and verify", ->
     jwt_request = jwt.jwt_decode fixtures.encoded_jwt
+    # asserts the request Header
     jwt_request.header.should.be.eql fixtures.jwt_header
+    # asserts the request Claim.
     jwt_request.claim.should.be.eql g_fixtures.jwt_claim
-
+    # verify through JWS given the known key.
     jwt_request.verify(fixtures.key).should.be.true
 
 
