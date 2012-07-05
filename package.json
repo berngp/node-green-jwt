@@ -1,11 +1,28 @@
 {
   "name": "jot",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha",
   "description": "Node implementation of JSON Web Token (JWT) with support for signatures (JWS), encryption (JWE) and web keys (JWK). ",
-  "keywords": [ "jwt", "jws", "jwe", "jwk" ],
-  "author": "Bernardo <bernardo.gomezpalacio@gmail.com>",
-  "dependencies": {
+  "author": {
+    "name" : "Bernardo Gomez Palacio",
+    "email": "bernardo.gomezpalacio@gmail.com"
   },
+  "repository" : {
+    "type" : "git",
+    "url"  : "git://github.com/berngp/node-jot.git"
+  },
+  "homepage" : "http://github.com/berngp/node-jot",
+  "contributors" : [
+      {
+        "name": "Bernardo Gomez Palacio",
+        "email": "bernardo.gomezpalacio@gmail.com"
+      },
+      {
+        "name": "Kazuhito Hokamura",
+        "email": "k.hokamura@gmail.com"
+      }
+  ],
+  "keywords": [ "jwt", "jws", "jwe", "jwk" ],
+  "dependencies": { },
   "devDependencies": {
     "coffee-script": "latest",
     "mocha": "*",
@@ -20,3 +37,4 @@
   },
   "main": "index"
 }
+ 
