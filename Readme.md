@@ -1,6 +1,6 @@
 [![Build Status](https://secure.travis-ci.org/berngp/node-jot.png?branch=master)](http://travis-ci.org/berngp/node-jot)
 
-# Jot
+# Green JWT
 
   Node.js implementation of JSON Web Token (JWT) with support for signatures (JWS), encryption (JWE) and web keys (JWK). 
 
