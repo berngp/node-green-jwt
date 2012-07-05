@@ -8,16 +8,36 @@
 
   The suggested pronunciation of JWT is the same as the English word "jot".
 
-  This package implements the following IETF drafts:
+  This package is aimed to implements the following IETF drafts:
 
-* [JWT](http://tools.ietf.org/html/draft-jones-json-web-token-10) draft-jones-json-web-token-10
-* [JWA](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt) draft-ietf-jose-json-web-algorithms-02
-* [JWS](http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-02) draft-ietf-jose-json-web-signature-02
-* [JWE](http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-02) draft-ietf-jose-json-web-encryption-02
-* [JWK](http://tools.ietf.org/html/draft-ietf-jose-json-web-key-02) draft-ietf-jose-json-web-key-02
+  * [JWT](http://tools.ietf.org/html/draft-jones-json-web-token-10) draft-jones-json-web-token-10
+  * [JWA](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt) draft-ietf-jose-json-web-algorithms-02
+  * [JWS](http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-02) draft-ietf-jose-json-web-signature-02
+  * [JWE](http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-02) draft-ietf-jose-json-web-encryption-02
+  * [JWK](http://tools.ietf.org/html/draft-ietf-jose-json-web-key-02) draft-ietf-jose-json-web-key-02
+
+
+  But currently we only support **JWT** with **JWS** and the following **JWA** signing algorithms
+
+  * NONE 
+  * HMAC 
+    * HS256
+    * HS384
+    * HS512
+  * RSA 
+    * RS256 
+    * RS384 
+    * RS512
+
+
+  As we move forward we will add additional **JWA** algorithms and support for **JWE**. Please submit any comments and suggestions.
+
+
+## Build Tools & Development Dependencies 
+The code is implemented using [CoffeeScript](http://jashkenas.github.com/coffee-script)
 
 ## Dependencies
-Pleae review the `pacagke.json` for the full set of dependencies.
+We try to keep dependencies to a minimum but pleae refer to the [pacagke.json](blob/master/package.json) for the full set of dependencies.
 
 ## License 
 

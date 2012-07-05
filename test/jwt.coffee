@@ -24,11 +24,11 @@ describe 'JWT Implementation with HMAC encryption ', ->
     encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.h7SvUGw_y4DJBMZiAiF49BAkkWhovB7B5HmztFAq6s0"
 
   it "should encode", ->
-    request = jwt.jwt_encode g_fixtures.jwt_claim, fixtures.key
+    request = jwt.encode g_fixtures.jwt_claim, fixtures.key
     request.should.be.eql fixtures.encoded_jwt
     
   it "should decode and verify", ->
-    jwt_request = jwt.jwt_decode fixtures.encoded_jwt
+    jwt_request = jwt.decode fixtures.encoded_jwt
     # asserts the request Header
     jwt_request.header.should.be.eql fixtures.jwt_header
     # asserts the request Claim.
@@ -89,11 +89,11 @@ GwIDAQAB
 
 
   it "should encode ...", ->
-    request = jwt.jwt_encode( g_fixtures.jwt_claim, fixtures.private_PEM_key, "RS256" )
+    request = jwt.encode( g_fixtures.jwt_claim, fixtures.private_PEM_key, "RS256" )
     request.should.be.eql fixtures.encoded_jwt
     
   it "should decode and verify ...", ->
-    jwt_request = jwt.jwt_decode fixtures.encoded_jwt
+    jwt_request = jwt.decode fixtures.encoded_jwt
     jwt_request.header.should.be.eql fixtures.jwt_header
     jwt_request.claim.should.be.eql g_fixtures.jwt_claim
     

@@ -1,2 +1,2 @@
 
-module.exports = require('./lib/jot');
+module.exports = require('./lib/jwt');

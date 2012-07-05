@@ -1,32 +1,26 @@
-#
-# * [JWT](http://tools.ietf.org/html/draft-jones-json-web-token-10) draft-jones-json-web-token-10
-# * [JWA](https://www.ietf.org/id/draft-ietf-jose-json-web-algorithms-02.txt) draft-ietf-jose-json-web-algorithms-02
-# * [JWS](http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-02) draft-ietf-jose-json-web-signature-02
-# * [JWE](http://tools.ietf.org/html/draft-ietf-jose-json-web-encryption-02) draft-ietf-jose-json-web-encryption-02
-# * [JWK](http://tools.ietf.org/html/draft-ietf-jose-json-web-key-02) draft-ietf-jose-json-web-key-02
-#
-#
-#
-
-# Dependencies
-# ============
 # Node
 crypto  = require "crypto"
 qstring = require "querystring"
-
-# Lip
+# Lib
 jwa = require "./jwa"
 ju  = require "./utils"
 
-
 # version of the specification we are based on. 
-module.exports.specVersion = "draft-jones-json-web-token-10"
+module.exports.spec_version = "draft-jones-json-web-token-10"
 
 #
+# Decodes a given JWT Token.
 #
+# ## Arguments
+# * token : The encoded JWT.
+# 
+# ## Returns
+# * A **JWT Request** that holds the following.
+#   * Attributes: header, claim, segments.
+#   * Methods: verify( key ) where they key is *alogrithm* dependant. e.g. if RS you should use a valid *public PEM*
 #
-module.exports.jwt_decode = jwt_decode = (token) ->
-  # check seguments
+module.exports.decode = (token) ->
+  # check segments
   segments = token.split '.'
   throw new Error 'Not enough or too many segments' if segments.length != 3
   
@@ -41,6 +35,10 @@ module.exports.jwt_decode = jwt_decode = (token) ->
   # return
   new JwtRequest( header, claim, segments )
 
+#
+#
+# Creates a *JWT Token* given the *claim*, the *key* and the given *algorithm*. The *algorithm* defaults to 
+# `"HS256"` (Which is a *JWS* *HMAC* signature).
 #
 # # Rules for Creating a JWT
 #
@@ -81,7 +79,12 @@ module.exports.jwt_decode = jwt_decode = (token) ->
 #
 #   7.  Otherwise, let the resulting JWT be the JWS or JWE.
 #
-module.exports.jwt_encode = (claim, key, algorithm = "HS256") ->
+# Todo: Refactor to segregate the concerns between JWT and JWS.
+# Todo: Include basic support for JWE identification (regardless of having implemented the JWE algorithms).
+#
+#
+#
+module.exports.encode = (claim, key, algorithm = "HS256") ->
   throw new Error 'Argument key is require' unless key
 
   jwa_provider  = jwa.provider algorithm
@@ -104,6 +107,9 @@ module.exports.jwt_encode = (claim, key, algorithm = "HS256") ->
   segments.join('.')
 
 
+#
+# Abstracts the handling of a JWT Request. 
+#
 class JwtRequest
   
   constructor: (@header, @claim, @segments) ->
@@ -118,7 +124,3 @@ class JwtRequest
 
     _verifier.verify @, key
   
-
-
-
-    
