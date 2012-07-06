@@ -1,5 +1,9 @@
 
-# 0.0.1 / 2010-01-03
+# 0.0.3-alpha /2012-06-060
+
+0. Fix **JWS** and **JWA** support for *NO Signature* or `none`
+
+# 0.0.1-alpha / 2012-06-05
 
 ##  Initial release
 
