@@ -42,6 +42,57 @@ jwa = require "../lib/jwa"
 #  implementations also support the RSA SHA-256 and ECDSA P-256 SHA-256
 #  algorithms.  Support for other algorithms and key sizes is OPTIONAL.
 
+describe 'JWA Implementation for None', ->
+  it "supports `none`", ->
+    noneSigner = jwa.provider("none")()
+    should.exist noneSigner
+    noneSigner.update( fixtures.dataString )
+    digest = noneSigner.sign()
+    digest.should.equal ""
+
+
+describe 'JWA Implementation for MAC', ->
+
+    # We generate permutations per known algorithm to assert the creation of the HMAC instance
+  # and digestion of the data.
+  ( (alg) =>
+    # specification of the supporting algorithm
+    it "supports #{alg}", ->
+      #instance of the HMAC given the algorithm and key
+      hmac = jwa.provider(alg)(fixtures.hmacKey)
+      should.exist hmac
+      # update the hmac algorithm instance with the kown data 
+      hmac.update(fixtures.dataString)
+      # digest the data with the current algorithm (alg) and key (hmacKey)
+      digest = hmac.sign()
+      # assert the value against the expected value.
+      digest.should.equal fixtures.expectations[alg]
+  
+  )(alg) for alg in ["HS256", "HS384", "HS512"]
+
+
+
+  it "should throw an error if an invalid algorithm is provided", ->
+    should.not.exist jwa.provider("HS124")
+
+
+
+describe 'JWA Implementation for RSA', ->
+
+  # Known Algorithms that should be asserted as defined by the JWA specification
+  kownAlg = ["RS256", "RS384", "RS512"]
+     # We generate the assertions by the given permutations of the known algorithms defined above.
+  ( (alg) =>
+    it "supports #{alg}", ->
+      rsSigner = jwa.provider(alg)(fixtures.key_PEM)
+      rsSigner.update(fixtures.dataString)
+      signed = rsSigner.sign()
+
+      signed.should.equal fixtures.expectations[alg]
+  
+  )(alg) for alg in ["RS256", "RS384", "RS512"]
+
+
 fixtures =
   # String representation of the JSON claim
   dataString : JSON.stringify( {att1 : "value", att2 : 1} )
@@ -90,50 +141,6 @@ hrnnw07pfG7XHI8piSgq7nruQ+OQVClbtng5SWkX63FIXItSoHOFTG/3YWf7wp9c
     RS384: "TfO2Y7smnasGGhy4Y0gMQ7aZb739KmaQzbYOFK-VZ7QssxRSzeJvCL4YfoJybPwsYb6UyqHtBmhIc6KnwBhFmH5HIm_stvvXjCdykkHG4_lsA_jO_mAEFABhXZFr1Iu4MPJvXfs3-xIOsnVFkbUtv7_B8Lbt9yglYFgRUCNacgRDUm8UvY9zi1iM-wEmxKYAJiYhlqsxaa0zk36x67B5QPf6jvcd_diPLuw7JRuprR_d11QBLZSW-4cXi6KIF_H07O-g6pvMOLtiIpESOdNzcGcxk5uCZIsONbE-JVde20mhILshjYnqS7Npz0Vy-rwmiLF_PaHyR_VcP4Cl8A5utQ"
 
     RS512: "SgSO79ZDzvzFbiVM-XIMSf8FLQooWpdqQIFm0yX9469La_Wl3YaZ-BcsDlHXQbi2M3_DAyfR0sSNeLMj2sWkga21Rj2u7xb7bvW689hHTvol4uP1pv88kZDUmJ1qjz7jeGfV78glPAJE4B3Sl1Lj71SgpaFeB9MkKM6VbZL1l98VjjcmNc9Qz9oRqQQyQtTWj4bV2r1lRqobPzmC5yfd5ZrSMqN5O09Z7MZkNLePyhX3x_qhC9qvSNdE1oj-RVa71QOy6tsrloTRtBmfJDd66rC7WnFkcGxU_v0jlaWpCWX_qsG518nJwSz2EvSDNQPMd17oiMBY7syX8KJLCbum9Q"
-
-
-
-
-describe 'JWA Implementation for MAC', ->
-
-    # We generate permutations per known algorithm to assert the creation of the HMAC instance
-  # and digestion of the data.
-  ( (alg) =>
-    # specification of the supporting algorithm
-    it "supports #{alg}", ->
-      #instance of the HMAC given the algorithm and key
-      hmac = jwa.provider(alg)(fixtures.hmacKey)
-      should.exist hmac
-      # update the hmac algorithm instance with the kown data 
-      hmac.update(fixtures.dataString)
-      # digest the data with the current algorithm (alg) and key (hmacKey)
-      digest = hmac.sign()
-      # assert the value against the expected value.
-      digest.should.equal fixtures.expectations[alg]
-  
-  )(alg) for alg in ["HS256", "HS384", "HS512"]
-
-
-
-  it "should throw an error if an invalid algorithm is provided", ->
-    should.not.exist jwa.provider("HS124")
-
-
-
-describe 'JWA Implementation for RSA', ->
-
-  # Known Algorithms that should be asserted as defined by the JWA specification
-  kownAlg = ["RS256", "RS384", "RS512"]
-     # We generate the assertions by the given permutations of the known algorithms defined above.
-  ( (alg) =>
-    it "supports #{alg}", ->
-      rsSigner = jwa.provider(alg)(fixtures.key_PEM)
-      rsSigner.update(fixtures.dataString)
-      signed = rsSigner.sign()
-
-      signed.should.equal fixtures.expectations[alg]
-  
-  )(alg) for alg in ["RS256", "RS384", "RS512"]
 
 
 

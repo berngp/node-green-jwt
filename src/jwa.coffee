@@ -72,7 +72,8 @@ class NoneSigner extends JwaAlgorithm
 
   alg : "NONE"
 
-  update: () ->
+  update: (data) ->
+    @
 
   digest: () -> ""
 
@@ -226,6 +227,7 @@ class RSSigner extends JwaAlgorithm
   update: (data) ->
     @_assertSigner()
     @signer.update data
+    @
 
   sign: (format = "base64") ->
     @_assertSigner()
@@ -329,7 +331,7 @@ newRSVerifier = () -> new RSVerifier
 #
 module.exports.provider = jwa_provider = (code) ->
   switch code
-    when "none" then () => newNoneAl()
+    when "none" then () => newNoneSigner()
     
     when "HS256", "HS384", "HS512" then (key) => newHMACSigner code, key
     
