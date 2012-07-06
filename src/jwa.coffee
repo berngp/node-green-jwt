@@ -40,6 +40,7 @@ ju      = require "./utils"
 jwa_table =
   NONE :
     TYPE : "SIGNATURE"
+    HASH_AL : {}
   HMAC :
     TYPE    : "SIGNATURE"
     HASH_AL :
