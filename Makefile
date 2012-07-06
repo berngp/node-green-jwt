@@ -18,7 +18,7 @@ tdd:
 gen_test_keys:
 	# openssl genrsa -des3 -passout pass:nosecret -out privkey.pem 2048
 	openssl genrsa -out etc/rsa_key.pem 2048
-	openssl rsa -in etc/rsa_key.pem -pubout > test/rsa_pubkey.pem
+	openssl rsa -in etc/rsa_key.pem -pubout > etc/rsa_pubkey.pem
 	# Generate the RSA keys and certificate
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -sha1 -subj \
 		'/C=US/ST=CA/L=San Francisco /CN=www.hashgo.com' -keyout \
