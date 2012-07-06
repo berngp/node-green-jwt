@@ -85,7 +85,6 @@ module.exports.decode = (token) ->
 #
 #
 module.exports.encode = (claim, key, algorithm = "HS256") ->
-  throw new Error 'Argument key is require' unless key
 
   jwa_provider  = jwa.provider algorithm
   throw new Error "Algorithm #{algorithm} is not yet supported." unless jwa_provider

@@ -3,25 +3,35 @@ should = require "should"
 # Self
 jwt = require "../lib/jwt"
 
-# Global Test Fixtures
-g_fixtures =
-  jwt_claim :
-    iss  : "joe"
-    exp  : 1300819380
-    "http://example.com/is_root" : true
 
+ 
+describe 'JWT Implementation with NO encryption ', ->
 
-describe 'JWT Implementation with HMAC encryption ', ->
+  it "should encode", ->
+    request = jwt.encode g_fixtures.jwt_claim, "", "none"
+    request.should.be.eql fixtures.encoded_jwt
+    
+  it "should decode and verify", ->
+    jwt_request = jwt.decode fixtures.encoded_jwt
+    # asserts the request Header
+    jwt_request.header.should.be.eql fixtures.jwt_header
+    # asserts the request Claim.
+    jwt_request.claim.should.be.eql g_fixtures.jwt_claim
+    # verify through JWS given the known key.
+    jwt_request.verify(fixtures.key).should.be.true
 
   # Suite specific fixtures
   fixtures =
-    key : "key"
 
     jwt_header :
       typ  : "JWT"
-      alg  : "HS256"
+      alg  : "none"
 
-    encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.h7SvUGw_y4DJBMZiAiF49BAkkWhovB7B5HmztFAq6s0"
+    encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ."
+
+
+
+describe 'JWT Implementation with HMAC encryption ', ->
 
   it "should encode", ->
     request = jwt.encode g_fixtures.jwt_claim, fixtures.key
@@ -36,11 +46,32 @@ describe 'JWT Implementation with HMAC encryption ', ->
     # verify through JWS given the known key.
     jwt_request.verify(fixtures.key).should.be.true
 
+  # Suite specific fixtures
+  fixtures =
+    key : "key"
+
+    jwt_header :
+      typ  : "JWT"
+      alg  : "HS256"
+
+    encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.h7SvUGw_y4DJBMZiAiF49BAkkWhovB7B5HmztFAq6s0"
+
 
 #
 # Describes the behaviour of the JWT with RSA Encryption
 #
 describe 'JWT Implementation with RSA encryption ', ->
+
+  it "should encode ...", ->
+    request = jwt.encode( g_fixtures.jwt_claim, fixtures.private_PEM_key, "RS256" )
+    request.should.be.eql fixtures.encoded_jwt
+    
+  it "should decode and verify ...", ->
+    jwt_request = jwt.decode fixtures.encoded_jwt
+    jwt_request.header.should.be.eql fixtures.jwt_header
+    jwt_request.claim.should.be.eql g_fixtures.jwt_claim
+    
+    jwt_request.verify(fixtures.public_PEM_key).should.be.true
 
   fixtures =
     private_PEM_key : """-----BEGIN RSA PRIVATE KEY-----
@@ -88,15 +119,12 @@ GwIDAQAB
     encoded_jwt : "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJqb2UiLCJleHAiOjEzMDA4MTkzODAsImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.Fxj4HudpAfGKccMqBzEFSsa-2kz1iEl4J0bdg0EmOQ0CIe0yJNa5Th-_EYKtUJ1UDdyqNKkMXhM9qGnuQcpqqTdG5FECxgiZl2OykwI47EBr-FINF4U-MpuQtdz7Hd2sMD8ldW6WAfZ8vBt4quhuo_YdnzBejD1b9m-_iG88xL-rKWL1_Vj2FeT6usxTGJRuEEHGuLmKvaAOxXAvMHxQDGI8ZelFMYl-IB3mDAllzv6YZnfx2jMYzv3pixN_RXXEeG886UP3OzdDm2PEecDnC_19d2uKJgHlGv5DZa_Ysds8EcyHpnZH9UmhlCA7Nu3Dr11n0rmmevJbeYmsQEXXcA"
 
 
-  it "should encode ...", ->
-    request = jwt.encode( g_fixtures.jwt_claim, fixtures.private_PEM_key, "RS256" )
-    request.should.be.eql fixtures.encoded_jwt
-    
-  it "should decode and verify ...", ->
-    jwt_request = jwt.decode fixtures.encoded_jwt
-    jwt_request.header.should.be.eql fixtures.jwt_header
-    jwt_request.claim.should.be.eql g_fixtures.jwt_claim
-    
-    jwt_request.verify(fixtures.public_PEM_key).should.be.true
+
+# Global Test Fixtures
+g_fixtures =
+  jwt_claim :
+    iss  : "joe"
+    exp  : 1300819380
+    "http://example.com/is_root" : true
 
 
