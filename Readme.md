@@ -37,7 +37,7 @@
 The code is implemented using [CoffeeScript](http://jashkenas.github.com/coffee-script)
 
 ## Dependencies
-We try to keep dependencies to a minimum but pleae refer to the [pacagke.json](blob/master/package.json) for the full set of dependencies.
+We try to keep dependencies to a minimum but pleae refer to the [package.json](blob/master/package.json) for the full set of dependencies.
 
 ## License 
 
