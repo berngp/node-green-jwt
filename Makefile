@@ -1,7 +1,11 @@
 REPORTER = dot
 
+# TODO check if mocha and docco are installed.
 install:
 	npm install
+
+clean:
+	cake clean	
 
 dev:
 	cake dev

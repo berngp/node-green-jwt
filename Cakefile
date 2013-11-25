@@ -31,7 +31,7 @@ task 'clean', 'Remove generated Javascripts', ->
 
 task 'test', 'Test the app', (options) ->
   console.log "\n\x1B[00;33m=>\x1B[00;32m Running tests..\x1B[00;33m\n"
-  mocha = spawn 'mocha', '-c -b --compilers coffee:coffee-script'.split(' ')
+  mocha = spawn 'mocha', '-c -b --compilers coffee:coffee-script -R spec'.split(' ')
   mocha.stdout.on 'data', (data) -> print data.toString()
   mocha.stderr.on 'data', (data) -> log data.toString(), red
 
