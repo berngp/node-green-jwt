@@ -32,6 +32,6 @@ gen_test_keys:
 docs:
 	cake docs
 
-all: install build test docs
+all: install build test
 
 .PHONY: all 

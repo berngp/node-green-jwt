@@ -5,6 +5,8 @@ node_js:
     - 0.10
 
 before_script:
-  npm install mocha
-  npm install docco
-  make all 
+    - npm install mocha
+    - npm install docco
+    - npm install 
+    - cake build
+    - cake test
