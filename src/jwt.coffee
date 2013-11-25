@@ -95,9 +95,10 @@ module.exports.encode = (claim, key, algorithm = "HS256", header_ext) ->
     typ: 'JWT'
     alg: algorithm
 
-  if header_ext?
-    for key, val of header_ext
-      header[key] = val
+  header_ext ?= {}
+  
+  for key, val of header_ext
+    header[key] = val
 
   #create segments, all segment should be base64 string
   segments = []
