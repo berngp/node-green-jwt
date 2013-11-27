@@ -84,7 +84,7 @@ module.exports.decode = (token) ->
 #
 #
 #
-module.exports.encode = (claim, key, algorithm = "HS256") ->
+module.exports.encode = (claim, key, algorithm = "HS256", header_ext = {}) ->
 
   jwa_provider  = jwa.provider algorithm
   throw new Error "Algorithm #{algorithm} is not yet supported." unless jwa_provider
@@ -94,6 +94,9 @@ module.exports.encode = (claim, key, algorithm = "HS256") ->
   header =
     typ: 'JWT'
     alg: algorithm
+
+  for key, val of header_ext
+    header[key] = val
 
   #create segments, all segment should be base64 string
   segments = []
