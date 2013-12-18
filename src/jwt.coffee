@@ -115,8 +115,10 @@ module.exports.encode = (claim, key, algorithm = "HS256", header_ext = {}) ->
 class JwtRequest
   
   constructor: (@header, @claim, @segments) ->
+    ###
     throw new Error "Unable to read `typ` form header or it doesn't match the expected 'JWT' value " unless @header.typ == 'JWT'
-
+    ###
+    
   verify: (key) ->
     _alg = @header?.alg
     _alg = "none" unless _alg
