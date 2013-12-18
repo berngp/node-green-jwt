@@ -21,6 +21,12 @@
         "email": "k.hokamura@gmail.com"
       }
   ],
+  "licenses": [
+    {
+        "type": "MIT",
+        "url": "https://raw.github.com/berngp/node-green-jwt/master/LICENSE"
+     }
+  ],
   "keywords": [ "jwt", "jws", "jwe", "jwk" ],
   "dependencies": { },
   "devDependencies": {
